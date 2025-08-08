@@ -11,35 +11,44 @@ describe('TransformToMatrix3DPlugin', () => {
   describe('convertToMatrix3D', () => {
     test('should convert translateX', () => {
       const result = plugin.convertToMatrix3D('translateX(100px)');
-      expect(result).toContain('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 100, 0, 0, 1)');
+      expect(result).toBe('matrix3d(1, 0, 0, 100, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
 
     test('should convert translateY', () => {
       const result = plugin.convertToMatrix3D('translateY(50px)');
-      expect(result).toContain('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 50, 0, 1)');
+      expect(result).toBe('matrix3d(1, 0, 0, 0, 0, 1, 0, 50, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
 
     test('should convert scale', () => {
       const result = plugin.convertToMatrix3D('scale(2)');
-      expect(result).toContain('matrix3d(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
+      expect(result).toBe('matrix3d(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
 
     test('should convert rotate', () => {
       const result = plugin.convertToMatrix3D('rotate(90deg)');
-      // 90度旋转: cos(90°) = 0, sin(90°) = 1
-      expect(result).toMatch(/matrix3d\(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1\)/);
+      // 90度旋转: cos(90°) ≈ 0, sin(90°) = 1
+      expect(result).toBe('matrix3d(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
 
     test('should combine multiple transforms', () => {
       const result = plugin.convertToMatrix3D('translateX(100px) scale(2)');
-      expect(result).toContain('matrix3d');
-      // translateX(100) * scale(2) = 先移动再缩放
-      // 结果矩阵应该是缩放2倍，然后X轴移动100
-      expect(result).toMatch(/matrix3d\(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 100, 0, 0, 1\)/);
+      // translateX(100) 然后 scale(2): 先移动100px，然后缩放2倍，所以X位置变成200
+      expect(result).toBe('matrix3d(2, 0, 0, 200, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
+    });
+
+    test('should handle complex transform combination', () => {
+      const result = plugin.convertToMatrix3D('scale(2) translateX(100px)');
+      // scale(2) 然后 translateX(100): 先缩放2倍，然后移动100px
+      expect(result).toBe('matrix3d(2, 0, 0, 100, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
 
     test('should handle invalid input gracefully', () => {
       const result = plugin.convertToMatrix3D('invalid-transform');
+      expect(result).toBeNull();
+    });
+
+    test('should handle empty input', () => {
+      const result = plugin.convertToMatrix3D('');
       expect(result).toBeNull();
     });
   });
@@ -73,8 +82,15 @@ describe('TransformToMatrix3DPlugin', () => {
         [2, 0, 0, 0],
         [0, 2, 0, 0],
         [0, 0, 1, 0],
-        [20, 40, 0, 1]
+        [10, 20, 0, 1]
       ]);
+    });
+
+    test('should multiply identity matrix correctly', () => {
+      const identity = plugin.createIdentityMatrix();
+      const translateMatrix = plugin.translateXMatrix(50);
+      const result = plugin.multiplyMatrices(identity, translateMatrix);
+      expect(result).toEqual(translateMatrix);
     });
   });
 
@@ -109,6 +125,17 @@ describe('TransformToMatrix3DPlugin', () => {
       const result = plugin.matrixToCSS(matrix);
       expect(result).toBe('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
+
+    test('should handle negative values correctly', () => {
+      const matrix = [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [-50, 100, 0, 1]
+      ];
+      const result = plugin.matrixToCSS(matrix);
+      expect(result).toBe('matrix3d(1, 0, 0, -50, 0, 1, 0, 100, 0, 0, 1, 0, 0, 0, 0, 1)');
+    });
   });
 
   describe('transform matrix generators', () => {
@@ -122,6 +149,16 @@ describe('TransformToMatrix3DPlugin', () => {
       ]);
     });
 
+    test('should generate correct translateY matrix', () => {
+      const matrix = plugin.translateYMatrix(50);
+      expect(matrix).toEqual([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 50, 0, 1]
+      ]);
+    });
+
     test('should generate correct scale matrix', () => {
       const matrix = plugin.scaleMatrix(2, 3);
       expect(matrix).toEqual([
@@ -130,6 +167,33 @@ describe('TransformToMatrix3DPlugin', () => {
         [0, 0, 1, 0],
         [0, 0, 0, 1]
       ]);
+    });
+
+    test('should generate correct rotation matrix', () => {
+      const matrix = plugin.rotateZMatrix(0); // 0度旋转
+      expect(matrix).toEqual([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+      ]);
+    });
+  });
+
+  describe('edge cases', () => {
+    test('should handle zero values', () => {
+      const result = plugin.convertToMatrix3D('translateX(0px)');
+      expect(result).toBe('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
+    });
+
+    test('should handle negative values', () => {
+      const result = plugin.convertToMatrix3D('translateX(-100px)');
+      expect(result).toBe('matrix3d(1, 0, 0, -100, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
+    });
+
+    test('should handle decimal values', () => {
+      const result = plugin.convertToMatrix3D('scale(1.5)');
+      expect(result).toBe('matrix3d(1.5, 0, 0, 0, 0, 1.5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
     });
   });
 });
@@ -153,5 +217,19 @@ describe('Webpack Integration', () => {
     expect(plugin.options.enabled).toBe(false);
     expect(plugin.options.keepOriginal).toBe(true);
     expect(plugin.options.test).toEqual(/\.scss$/);
+  });
+
+  test('should handle disabled state', () => {
+    const plugin = new TransformToMatrix3DPlugin({ enabled: false });
+    const mockCompiler = {
+      hooks: {
+        compilation: {
+          tap: jest.fn()
+        }
+      }
+    };
+    
+    plugin.apply(mockCompiler);
+    expect(mockCompiler.hooks.compilation.tap).not.toHaveBeenCalled();
   });
 });
