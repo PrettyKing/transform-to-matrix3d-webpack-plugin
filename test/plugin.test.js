@@ -26,12 +26,15 @@ describe('TransformToMatrix3DPlugin', () => {
 
     test('should convert rotate', () => {
       const result = plugin.convertToMatrix3D('rotate(90deg)');
+      // 90度旋转: cos(90°) = 0, sin(90°) = 1
       expect(result).toMatch(/matrix3d\(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1\)/);
     });
 
     test('should combine multiple transforms', () => {
       const result = plugin.convertToMatrix3D('translateX(100px) scale(2)');
       expect(result).toContain('matrix3d');
+      // translateX(100) * scale(2) = 先移动再缩放
+      // 结果矩阵应该是缩放2倍，然后X轴移动100
       expect(result).toMatch(/matrix3d\(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 100, 0, 0, 1\)/);
     });
 
@@ -60,17 +63,17 @@ describe('TransformToMatrix3DPlugin', () => {
         [0, 0, 0, 1]
       ];
       const b = [
-        [1, 0, 0, 10],
-        [0, 1, 0, 20],
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
         [0, 0, 1, 0],
-        [0, 0, 0, 1]
+        [10, 20, 0, 1]
       ];
       const result = plugin.multiplyMatrices(a, b);
       expect(result).toEqual([
-        [2, 0, 0, 10],
-        [0, 2, 0, 20],
+        [2, 0, 0, 0],
+        [0, 2, 0, 0],
         [0, 0, 1, 0],
-        [0, 0, 0, 1]
+        [20, 40, 0, 1]
       ]);
     });
   });
@@ -105,6 +108,28 @@ describe('TransformToMatrix3DPlugin', () => {
       ];
       const result = plugin.matrixToCSS(matrix);
       expect(result).toBe('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)');
+    });
+  });
+
+  describe('transform matrix generators', () => {
+    test('should generate correct translateX matrix', () => {
+      const matrix = plugin.translateXMatrix(100);
+      expect(matrix).toEqual([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [100, 0, 0, 1]
+      ]);
+    });
+
+    test('should generate correct scale matrix', () => {
+      const matrix = plugin.scaleMatrix(2, 3);
+      expect(matrix).toEqual([
+        [2, 0, 0, 0],
+        [0, 3, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+      ]);
     });
   });
 });
