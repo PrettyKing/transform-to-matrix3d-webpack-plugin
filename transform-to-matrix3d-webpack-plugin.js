@@ -176,22 +176,22 @@ class TransformToMatrix3DPlugin {
     }
   }
 
-  // Transform matrix generators
+  // Transform matrix generators - 修正平移矩阵的位置
   translateXMatrix(x) {
     return [
-      [1, 0, 0, x],
+      [1, 0, 0, 0],
       [0, 1, 0, 0],
       [0, 0, 1, 0],
-      [0, 0, 0, 1]
+      [x, 0, 0, 1]
     ];
   }
 
   translateYMatrix(y) {
     return [
       [1, 0, 0, 0],
-      [0, 1, 0, y],
+      [0, 1, 0, 0],
       [0, 0, 1, 0],
-      [0, 0, 0, 1]
+      [0, y, 0, 1]
     ];
   }
 
@@ -199,26 +199,26 @@ class TransformToMatrix3DPlugin {
     return [
       [1, 0, 0, 0],
       [0, 1, 0, 0],
-      [0, 0, 1, z],
-      [0, 0, 0, 1]
+      [0, 0, 1, 0],
+      [0, 0, z, 1]
     ];
   }
 
   translateMatrix(x, y) {
     return [
-      [1, 0, 0, x],
-      [0, 1, 0, y],
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
       [0, 0, 1, 0],
-      [0, 0, 0, 1]
+      [x, y, 0, 1]
     ];
   }
 
   translate3dMatrix(x, y, z) {
     return [
-      [1, 0, 0, x],
-      [0, 1, 0, y],
-      [0, 0, 1, z],
-      [0, 0, 0, 1]
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [x, y, z, 1]
     ];
   }
 
@@ -321,10 +321,10 @@ class TransformToMatrix3DPlugin {
   matrix2dTo3d(values) {
     const [a, b, c, d, e, f] = values;
     return [
-      [a, c, 0, e],
-      [b, d, 0, f],
+      [a, c, 0, 0],
+      [b, d, 0, 0],
       [0, 0, 1, 0],
-      [0, 0, 0, 1]
+      [e, f, 0, 1]
     ];
   }
 
@@ -339,8 +339,9 @@ class TransformToMatrix3DPlugin {
   }
 
   multiplyMatrices(a, b) {
-    const result = this.createIdentityMatrix();
+    const result = [];
     for (let i = 0; i < 4; i++) {
+      result[i] = [];
       for (let j = 0; j < 4; j++) {
         result[i][j] = 0;
         for (let k = 0; k < 4; k++) {
@@ -352,7 +353,7 @@ class TransformToMatrix3DPlugin {
   }
 
   matrixToCSS(matrix) {
-    // 将4x4矩阵转换为CSS matrix3d格式
+    // 将4x4矩阵转换为CSS matrix3d格式 (按列优先顺序)
     const values = [
       matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
       matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
