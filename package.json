@@ -1,10 +1,11 @@
 {
   "name": "transform-to-matrix3d-webpack-plugin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Webpack plugin that converts CSS transform properties to matrix3d format for better performance and consistency",
   "main": "index.js",
   "scripts": {
     "test": "jest",
+    "test:quick": "node test-quick.js",
     "build": "echo 'No build step required'",
     "prepublishOnly": "npm test"
   },
@@ -46,6 +47,7 @@
     "index.js",
     "transform-to-matrix3d-webpack-plugin.js",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ]
 }
