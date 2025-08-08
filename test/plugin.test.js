@@ -171,12 +171,17 @@ describe('TransformToMatrix3DPlugin', () => {
 
     test('should generate correct rotation matrix', () => {
       const matrix = plugin.rotateZMatrix(0); // 0度旋转
-      expect(matrix).toEqual([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
-      ]);
+      // 使用更宽松的比较来处理 -0 vs 0 的问题
+      expect(matrix[0][0]).toBeCloseTo(1);
+      expect(matrix[0][1]).toBeCloseTo(0);
+      expect(matrix[0][2]).toBe(0);
+      expect(matrix[0][3]).toBe(0);
+      expect(matrix[1][0]).toBeCloseTo(0);
+      expect(matrix[1][1]).toBeCloseTo(1);
+      expect(matrix[1][2]).toBe(0);
+      expect(matrix[1][3]).toBe(0);
+      expect(matrix[2]).toEqual([0, 0, 1, 0]);
+      expect(matrix[3]).toEqual([0, 0, 0, 1]);
     });
   });
 
