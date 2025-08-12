@@ -1,5 +1,7 @@
 # Transform to Matrix3D Webpack Plugin
 
+> author: Chalee
+
 一个Webpack插件，可以将CSS中的transform属性转换为matrix3d格式，提高渲染性能和跨浏览器兼容性。
 
 ## 特性
